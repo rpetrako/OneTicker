@@ -39,6 +39,18 @@ bash icon/make_icns.sh
 bash devbuild.sh
 ```
 
+## Version control
+
+Single `main` branch, initial commit 2026-09-02. No remote yet; `gh` is installed if one is
+wanted.
+
+Ignored: `dist_swift/` and the derived `icon/AppIcon.icns`. The master `icon/AppIcon-1024.png`
+IS tracked, and `build_swift.sh` regenerates the icns automatically when it is missing, so a
+fresh clone builds correctly with no extra step. Verified by cloning to /tmp and building.
+
+Note that `build_swift.sh` always installs to `/Applications/OneTicker.app`, so running it
+from a scratch clone replaces the installed app.
+
 ## Identity
 
 | | |
