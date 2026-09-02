@@ -31,8 +31,15 @@ symbol in Settings and it does the rest. That is the whole app.
 
 ## Requirements
 
-macOS 13 or later. Nothing else. No Xcode project, no package manager, no third-party
-dependencies.
+macOS, and the Xcode Command Line Tools to compile it:
+
+```bash
+xcode-select --install
+```
+
+That is the only prerequisite. No Xcode project, no package manager, no third-party
+dependencies. The source targets macOS 13 and later, though it has only been tested on
+macOS 26.
 
 ## Build
 
@@ -42,11 +49,17 @@ cd OneTicker
 bash build_swift.sh
 ```
 
-That compiles with `swiftc`, builds the app bundle, generates the icon, ad-hoc signs it and
-installs it to `/Applications`. Roughly ten seconds.
+Compiles with `swiftc`, assembles the app bundle, generates the icon, ad-hoc signs it and
+installs it to `/Applications`. About ten seconds.
 
-The app is ad-hoc signed rather than notarized, so macOS may warn on first launch. Right
-click, Open.
+**There is no Gatekeeper prompt.** Because you compile it yourself, the result never carries
+a quarantine flag, so it opens normally. It is also built for your own architecture and your
+own macOS version.
+
+That is the only supported way to install it. There is no release binary, and there will not
+be one unless it is signed with a Developer ID and notarized: an unnotarized `.app` handed
+over or downloaded *is* quarantined, and macOS will refuse to open it without a detour
+through System Settings.
 
 ## A note on the data
 
