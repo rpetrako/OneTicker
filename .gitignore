@@ -1,0 +1,14 @@
+# Build output
+dist_swift/
+.build/
+.swiftpm/
+
+# Derived icon. Regenerate with icon/make_icns.sh; build_swift.sh does it automatically.
+icon/AppIcon.icns
+icon/*.iconset/
+
+# macOS
+.DS_Store
+
+# Local tool state
+.claude/settings.local.json
