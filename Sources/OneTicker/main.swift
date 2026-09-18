@@ -1,4 +1,5 @@
 import Cocoa
+import ServiceManagement
 
 // MARK: - Constants
 /// How often to poll while the instrument's exchange is open.
@@ -283,12 +284,44 @@ func activateApp() {
     else { NSApp.activate(ignoringOtherApps: true) }
 }
 
+// MARK: - Launch at login
+/// SMAppService registers the app with the system by bundle identity, so unlike a
+/// hand-added login item it cannot be left dangling when the app is renamed or moved.
+/// A stale "SAP Ticker" entry pointing at a deleted bundle is exactly what this avoids.
+enum LoginItem {
+    static var isEnabled: Bool { SMAppService.mainApp.status == .enabled }
+
+    /// The app was in the user's login items under its previous name. Renaming the
+    /// bundle orphaned that entry, silently, and it only showed up at the next reboot.
+    /// Restore the behaviour once; after that the checkbox owns it.
+    static func restoreOnce() {
+        let key = "didRegisterLoginItem"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        if let problem = set(true) {
+            NSLog("[OneTicker] could not register login item: %@", problem)
+        }
+    }
+
+    /// Returns nil on success, or a message to show the user.
+    static func set(_ enabled: Bool) -> String? {
+        do {
+            if enabled { try SMAppService.mainApp.register() }
+            else       { try SMAppService.mainApp.unregister() }
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+}
+
 // MARK: - Settings window
 final class SettingsWindowController: NSObject, NSTextFieldDelegate, NSWindowDelegate {
     private var window:       NSWindow!
     private var marketPopUp:  NSPopUpButton!
     private var symbolField:  NSTextField!
     private var previewLabel: NSTextField!
+    private var launchAtLogin: NSButton!
     private let onSave: () -> Void
 
     init(onSave: @escaping () -> Void) {
@@ -298,7 +331,7 @@ final class SettingsWindowController: NSObject, NSTextFieldDelegate, NSWindowDel
     }
 
     private func buildWindow() {
-        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 232),
+        window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 440, height: 286),
                           styleMask: [.titled, .closable],
                           backing: .buffered,
                           defer: false)
@@ -309,27 +342,34 @@ final class SettingsWindowController: NSObject, NSTextFieldDelegate, NSWindowDel
 
         guard let content = window.contentView else { return }
 
-        content.addSubview(label("Market:", NSRect(x: 24, y: 176, width: 70, height: 18), align: .right))
-        marketPopUp = NSPopUpButton(frame: NSRect(x: 102, y: 171, width: 314, height: 26), pullsDown: false)
+        content.addSubview(label("Market:", NSRect(x: 24, y: 230, width: 70, height: 18), align: .right))
+        marketPopUp = NSPopUpButton(frame: NSRect(x: 102, y: 225, width: 314, height: 26), pullsDown: false)
         marketPopUp.addItems(withTitles: kMarkets.map { $0.name })
         marketPopUp.target = self
         marketPopUp.action = #selector(inputChanged)
         content.addSubview(marketPopUp)
 
-        content.addSubview(label("Symbol:", NSRect(x: 24, y: 138, width: 70, height: 18), align: .right))
-        symbolField = NSTextField(frame: NSRect(x: 102, y: 135, width: 160, height: 24))
+        content.addSubview(label("Symbol:", NSRect(x: 24, y: 192, width: 70, height: 18), align: .right))
+        symbolField = NSTextField(frame: NSRect(x: 102, y: 189, width: 160, height: 24))
         symbolField.placeholderString = "e.g. SAP"
         symbolField.delegate = self
         content.addSubview(symbolField)
 
-        previewLabel = label("", NSRect(x: 102, y: 104, width: 314, height: 18), secondary: true)
+        previewLabel = label("", NSRect(x: 102, y: 158, width: 314, height: 18), secondary: true)
         content.addSubview(previewLabel)
 
         let hint = label("Enter the plain symbol without an exchange suffix. The suffix for the\nselected market is added automatically.",
-                         NSRect(x: 24, y: 56, width: 392, height: 34), secondary: true)
+                         NSRect(x: 24, y: 110, width: 392, height: 34), secondary: true)
         hint.lineBreakMode        = .byWordWrapping
         hint.maximumNumberOfLines = 2
         content.addSubview(hint)
+
+        // Applies immediately rather than on Save, matching how System Settings
+        // treats login items. Cancel deliberately does not revert it.
+        launchAtLogin = NSButton(checkboxWithTitle: "Open OneTicker at login",
+                                 target: self, action: #selector(launchAtLoginToggled))
+        launchAtLogin.frame = NSRect(x: 102, y: 66, width: 314, height: 20)
+        content.addSubview(launchAtLogin)
 
         let cancel = NSButton(frame: NSRect(x: 232, y: 16, width: 90, height: 32))
         cancel.title         = "Cancel"
@@ -367,6 +407,7 @@ final class SettingsWindowController: NSObject, NSTextFieldDelegate, NSWindowDel
             marketPopUp.selectItem(at: idx)
         }
         symbolField.stringValue = Settings.symbol
+        launchAtLogin.state = LoginItem.isEnabled ? .on : .off
         updatePreview()
 
         activateApp()
@@ -394,6 +435,18 @@ final class SettingsWindowController: NSObject, NSTextFieldDelegate, NSWindowDel
     private func updatePreview() {
         let s = normalizedSymbol()
         previewLabel.stringValue = s.isEmpty ? "" : "Yahoo symbol:  \(s + selectedMarket().suffix)"
+    }
+
+    @objc private func launchAtLoginToggled() {
+        let wanted = launchAtLogin.state == .on
+        guard let problem = LoginItem.set(wanted) else { return }
+        // Failed: put the checkbox back where it was and say why.
+        launchAtLogin.state = wanted ? .off : .on
+        let alert = NSAlert()
+        alert.messageText     = "Could not change the login item"
+        alert.informativeText = problem
+        alert.alertStyle      = .warning
+        alert.beginSheetModal(for: window, completionHandler: nil)
     }
 
     @objc private func inputChanged() { updatePreview() }
@@ -451,6 +504,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(actionItem("About \(kAppName)", #selector(showAbout), symbol: "info.circle"))
         menu.addItem(actionItem("Quit", #selector(NSApplication.terminate(_:)), key: "q", symbol: "power"))
         statusItem.menu = menu
+
+        LoginItem.restoreOnce()
 
         fetchAndUpdate()
         let t = Timer.scheduledTimer(withTimeInterval: kTickInterval, repeats: true) { [weak self] _ in

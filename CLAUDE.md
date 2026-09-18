@@ -27,6 +27,12 @@ Compiles `Sources/OneTicker/main.swift` with `swiftc -O`, assembles a `.app` in
 `dist_swift/`, copies in `icon/AppIcon.icns`, ad-hoc signs it, and installs it to
 `/Applications/OneTicker.app`. No Xcode project, no package manager.
 
+**The deployment target is pinned** (`MINOS="13.0"` in `build_swift.sh`, plus
+`LSMinimumSystemVersion`). Without `-target`, `swiftc` inherits the building Mac's SDK: the
+2.4.0 binary was built on macOS 26 and carried `minos 26.0`, so rebuilding it on macOS 27
+would silently have produced something macOS 26 could not launch. The build is also
+universal now, two `swiftc` passes joined with `lipo`, so it runs on Intel as well.
+
 **Rebuild the icon** (only when `icon/AppIcon-1024.png` changes):
 
 ```bash
@@ -57,13 +63,32 @@ from a scratch clone replaces the installed app.
 |---|---|
 | App name | `OneTicker` |
 | Bundle ID | `com.petrakovic.oneticker` (dev variant: `.dev`) |
-| Version | 2.4.0 (`CFBundleShortVersionString` and `CFBundleVersion`) |
+| Version | 2.5.0 (`CFBundleShortVersionString` and `CFBundleVersion`) |
 | Lock file | `~/.oneticker.lock` |
 | UserDefaults domain | `com.petrakovic.oneticker` |
 | `LSUIElement` | `true` (menu bar only, no Dock icon) |
 
 The bundle ID is provisional; it has to match whatever gets registered in App Store
 Connect.
+
+## Launch at login
+
+Registered through `SMAppService.mainApp` (macOS 13+), toggled by a checkbox in Settings.
+The toggle applies immediately rather than on Save, matching how System Settings treats
+login items, so Cancel deliberately does not revert it.
+
+**Why SMAppService rather than a login item the user adds by hand.** The app was previously
+in the user's login items under its old name. Renaming the bundle on 2 September orphaned
+that entry: it pointed at a path that no longer existed, System Events reported its path as
+`missing value`, and nothing started at login. It went unnoticed for two weeks because the
+Mac never rebooted in that window. SMAppService registers by bundle identity, so it cannot
+be left dangling the same way.
+
+`LoginItem.restoreOnce()` runs at launch and enables registration exactly once, guarded by
+the `didRegisterLoginItem` default. It exists to repair that specific breakage. Do not
+extend it into general "enable by default" behaviour.
+
+**If you ever rename or move the bundle again, check the login items.**
 
 ## Build hygiene
 
@@ -128,9 +153,9 @@ Shows name, version and copyright only.
 
 - Name ← `CFBundleName`, copyright ← `NSHumanReadableCopyright`, version ←
   `CFBundleShortVersionString`, icon ← the bundle's `AppIcon.icns`.
-- Two option keys are easy to confuse: `.applicationVersion` is the **"Version 2.4.0"
+- Two option keys are easy to confuse: `.applicationVersion` is the **"Version 2.5.0"
   line**, `.version` is the **"(build)" suffix**. Passing `.version = ""` suppresses the
-  redundant "Version 2.4.0 (2.4.0)".
+  redundant "Version 2.5.0 (2.5.0)".
 - `.credits` carries two short lines between the version and the copyright: the refresh
   cadence and a delayed-quotes note. The cadence string is derived from `kRefreshInterval`
   by `refreshPhrase()`, so it cannot drift out of step with the timer. The panel is narrow,

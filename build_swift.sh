@@ -4,13 +4,23 @@ cd "$(dirname "$0")"
 
 APPNAME="OneTicker"
 BUNDLEID="com.petrakovic.oneticker"
+# Pinned so the binary does not silently inherit whatever macOS built it.
+# Without this, building on macOS 27 produces something macOS 26 refuses to launch.
+MINOS="13.0"
 APP="dist_swift/${APPNAME}.app"
 
 rm -rf dist_swift
 mkdir -p "${APP}/Contents/MacOS"
 
-# Compile
-swiftc -O -o "${APP}/Contents/MacOS/${APPNAME}" Sources/OneTicker/main.swift
+# Compile a universal binary. Two passes plus lipo, so it runs on Apple Silicon
+# and Intel, and on any macOS from ${MINOS} up.
+SRC=Sources/OneTicker/main.swift
+OUT="${APP}/Contents/MacOS/${APPNAME}"
+swiftc -O -target arm64-apple-macos${MINOS}  -o "${OUT}.arm64"  "$SRC"
+swiftc -O -target x86_64-apple-macos${MINOS} -o "${OUT}.x86_64" "$SRC"
+lipo -create "${OUT}.arm64" "${OUT}.x86_64" -output "${OUT}"
+rm -f "${OUT}.arm64" "${OUT}.x86_64"
+echo "architectures: $(lipo -archs "${OUT}")"
 
 # Info.plist
 cat > "${APP}/Contents/Info.plist" << PLIST
@@ -29,11 +39,13 @@ cat > "${APP}/Contents/Info.plist" << PLIST
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleShortVersionString</key>
-    <string>2.4.0</string>
+    <string>2.5.0</string>
     <key>CFBundleVersion</key>
-    <string>2.4.0</string>
+    <string>2.5.0</string>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Ranko Petrakovic. All rights reserved.</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>${MINOS}</string>
     <key>LSUIElement</key>
     <true/>
     <key>NSPrincipalClass</key>

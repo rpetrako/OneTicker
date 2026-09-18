@@ -12,3 +12,6 @@ icon/*.iconset/
 
 # Local tool state
 .claude/settings.local.json
+
+# Cowork scratch
+Claude outputs/

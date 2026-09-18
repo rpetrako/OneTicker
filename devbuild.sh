@@ -8,7 +8,7 @@ APPNAME="OneTicker Dev"
 APP="/tmp/devbuild/${APPNAME}.app"
 rm -rf /tmp/devbuild
 mkdir -p "${APP}/Contents/MacOS" "${APP}/Contents/Resources"
-swiftc -O -o "${APP}/Contents/MacOS/${APPNAME}" Sources/OneTicker/main.swift
+swiftc -O -target arm64-apple-macos13.0 -o "${APP}/Contents/MacOS/${APPNAME}" Sources/OneTicker/main.swift
 cp icon/AppIcon.icns "${APP}/Contents/Resources/AppIcon.icns"
 cat > "${APP}/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -20,8 +20,8 @@ cat > "${APP}/Contents/Info.plist" << 'PLIST'
     <key>CFBundleDisplayName</key><string>OneTicker Dev</string>
     <key>CFBundleExecutable</key><string>OneTicker Dev</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
-    <key>CFBundleShortVersionString</key><string>2.4.0</string>
-    <key>CFBundleVersion</key><string>2.4.0</string>
+    <key>CFBundleShortVersionString</key><string>2.5.0</string>
+    <key>CFBundleVersion</key><string>2.5.0</string>
     <key>NSHumanReadableCopyright</key><string>Copyright © 2026 Ranko Petrakovic. All rights reserved.</string>
     <key>NSPrincipalClass</key><string>NSApplication</string>
 </dict>
