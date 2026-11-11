@@ -2,7 +2,7 @@
 
 A macOS menu bar app that shows one stock's live price. One ticker, nothing else.
 
-![Version](https://img.shields.io/badge/version-2.4.0-blue) ![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
+![Version](https://img.shields.io/badge/version-2.5.0-blue) ![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ```
 🏷  Price:  181,94 EUR
@@ -27,6 +27,7 @@ symbol in Settings and it does the rest. That is the whole app.
 - Market hours come from the exchange the instrument actually trades on, not a hardcoded
   timetable, so it works the same for Xetra and NASDAQ
 - Refreshes once a minute while the market is open, slowly while it is closed
+- Opens at login if you tick the box in Settings
 - No Dock icon, no window, no account, no telemetry
 
 ## Requirements
@@ -53,8 +54,8 @@ Compiles with `swiftc`, assembles the app bundle, generates the icon, ad-hoc sig
 installs it to `/Applications`. About ten seconds.
 
 **There is no Gatekeeper prompt.** Because you compile it yourself, the result never carries
-a quarantine flag, so it opens normally. It is also built for your own architecture and your
-own macOS version.
+a quarantine flag, so it opens normally. It is a universal binary, so it runs on Apple Silicon
+and Intel, on macOS 13 and later.
 
 That is the only supported way to install it. There is no release binary, and there will not
 be one unless it is signed with a Developer ID and notarized: an unnotarized `.app` handed
