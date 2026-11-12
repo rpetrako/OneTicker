@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Design notes
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Design notes for OneTicker and the things that cost time to learn. Read this before changing anything.
 
 ## Project
 
@@ -224,7 +224,7 @@ reason to poll slowly. It is not. Measured on 2026-09-02: `regularMarketTime` ad
 lockstep with wall clock and the price changes on every poll, sitting a steady ~15 min 30 s
 behind. **The delay is a sliding window, not a batch.** Polling every 60 s therefore returns
 a genuinely new price every 60 s. Slowing the timer would add staleness on top of the
-delay for nothing. See `claude/yahoo-feed-behaviour.md` in the project notes.
+delay for nothing. See `yahoo-feed-behaviour.md` in the project notes.
 
 ## Known fragility: Yahoo rate limiting
 

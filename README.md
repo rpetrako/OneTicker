@@ -74,7 +74,7 @@ automated access to it. That is a deliberate, documented limitation rather than 
 - The endpoint is undocumented and unversioned. It has changed before and will change again.
 
 If you want to run something like this properly licensed, the alternatives are documented in
-`CLAUDE.md`: exchange-operated free delayed feeds (Deutsche Börse publishes Xetra data free
+`DESIGN_NOTES.md`: exchange-operated free delayed feeds (Deutsche Börse publishes Xetra data free
 of charge), or a commercial provider with a developer programme that permits each user to
 bring their own API key.
 
@@ -85,10 +85,10 @@ Sources/OneTicker/main.swift   the entire app, one file
 build_swift.sh                 build, sign, install
 devbuild.sh                    visible twin for UI testing
 icon/                          1024x1024 master and the icns generator
-CLAUDE.md                      design notes and the things that cost time to learn
+DESIGN_NOTES.md                design notes and the things that cost time to learn
 ```
 
-`CLAUDE.md` is worth reading before changing anything. It records the non-obvious bits, such
+`DESIGN_NOTES.md` is worth reading before changing anything. It records the non-obvious bits, such
 as why every menu row carries an icon and why the refresh timer must not be gated on whether
 the market is open.
 
